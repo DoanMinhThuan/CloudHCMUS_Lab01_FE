@@ -1,0 +1,71 @@
+trigger:
+  - main
+
+pool:
+  name: azure-devops-agent
+  demands:
+    - agent.name -equals ec2-agent
+
+variables:
+  - group: credentials
+  - name: dockerfilePath
+    value: './Dockerfile'
+
+steps:
+- script: |
+    echo "=== Docker Access Test ==="
+    whoami
+    groups
+    docker ps || { echo "Failed to access Docker. Permission denied."; exit 1; }
+  displayName: 'Test Docker Access (whoami, groups, docker ps)'
+
+- script: |
+    docker --version || { echo "Docker not found. Please install Docker."; exit 1; }
+    docker info || { echo "Docker daemon not running."; exit 1; }
+  displayName: 'Verify Docker Installation'
+
+- task: Docker@2
+  displayName: 'Login to Docker Hub'
+  inputs:
+    command: 'login'
+    containerRegistry: 'docker-hub-connection'
+
+- task: Docker@2
+  displayName: 'Build Docker image'
+  inputs:
+    command: 'build'
+    Dockerfile: '$(dockerfilePath)'
+    tags: '$(tag)'
+    repository: '$(dockerHubUsername)/$(imageName)'
+
+- task: Docker@2
+  displayName: 'Push Docker image to Docker Hub'
+  inputs:
+    command: 'push'
+    repository: '$(dockerHubUsername)/$(imageName)'
+    tags: '$(tag)'
+
+- task: AzureCLI@2
+  displayName: 'Get AKS Service Info'
+  inputs:
+    azureSubscription: '$(azureSubscription)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      az aks get-credentials --resource-group $(resourceGroup) --name $(clusterName) --overwrite-existing
+      kubectl get nodes
+
+- task: AzureCLI@2
+  displayName: 'Deploy to AKS and ArgoCD'
+  inputs:
+    azureSubscription: '$(azureSubscription)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      rm -rf HelmMonolithic
+      git clone https://github.com/KhacThien88/HelmMonolithic
+      chmod +x HelmMonolithic/deploy_fe.sh
+      bash HelmMonolithic/deploy_fe.sh
+      kubectl get pods -n todoapp-test
+
+
