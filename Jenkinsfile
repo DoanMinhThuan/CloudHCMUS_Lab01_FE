@@ -45,8 +45,16 @@ pipeline {
                 sh "docker rmi $DOCKER_IMAGE:latest"
             }
         }
+        // Thêm đoạn này vào cuối pipeline
+    post {
+        success {
+            echo 'Frontend build success. Triggering Deploy CD...'
+            // Thay 'Lab01-Deploy-CD' bằng tên chính xác của Job CD trong Jenkins của bạn
+            build job: 'Lab01-Deploy-CD', wait: false
+        }
     }
 }
+
 
 
 
