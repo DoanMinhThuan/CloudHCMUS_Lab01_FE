@@ -18,10 +18,13 @@ resource "aws_default_vpc" "default" {
   }
 }
 
-# 1. Tạo Security Group (Mở cổng 22 và 80)
+# 1. Tạo Security Group (Cần gắn vào VPC ID ở trên)
 resource "aws_security_group" "app_sg" {
   name        = "app-sg-tf"
   description = "Allow SSH and HTTP"
+  
+  # --- QUAN TRỌNG: GẮN VÀO VPC ---
+  vpc_id      = aws_default_vpc.default.id 
 
   ingress {
     from_port   = 22
@@ -56,16 +59,15 @@ data "aws_ami" "ubuntu" {
     name   = "virtualization-type"
     values = ["hvm"]
   }
-  owners = ["099720109477"] # Canonical
+  owners = ["099720109477"] 
 }
 
 # 3. Tạo máy EC2 App Server
 resource "aws_instance" "app_server" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.medium" # Cấu hình mạnh theo yêu cầu
+  instance_type = "t3.medium"
   
-  # --- QUAN TRỌNG: SỬA TÊN KEY CỦA BẠN VÀO DƯỚI ĐÂY ---
-  # Key pair name bạn đang dùng trên AWS (ví dụ: my-key-pair)
+  # Key pair mới bạn đã tạo
   key_name      = "Jenkins-IaC-Key" 
   
   vpc_security_group_ids = [aws_security_group.app_sg.id]
@@ -75,7 +77,7 @@ resource "aws_instance" "app_server" {
   }
 }
 
-# 4. Xuất ra IP của máy vừa tạo (để Ansible biết đường vào cài)
+# 4. Xuất ra IP
 output "instance_ip" {
   value = aws_instance.app_server.public_ip
 }
