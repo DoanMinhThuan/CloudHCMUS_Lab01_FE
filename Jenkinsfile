@@ -1,56 +1,54 @@
 pipeline {
     agent any
+    
+    // --- PHẦN BẮT BUỘC PHẢI CÓ ---
     environment {
-        // --- QUAN TRỌNG: Sửa dòng dưới thành tên DockerHub của bạn ---
-        // Ví dụ: thucdo08/lab01-fe
+        // Tên image của bạn trên DockerHub
         DOCKER_IMAGE = 'dhuuthuc/lab01-fe' 
         
-        // Cái này giữ nguyên vì nãy bạn đặt ID là dockerhub-login rồi
-        REGISTRY_CREDS = 'dockerhub-login'    // ID bạn đặt lúc nãy
+        // ID này phải khớp CHÍNH XÁC với ID trong ảnh image_5ad627.png của bạn
+        DOCKER_CRED_ID = 'dockerhub-login'
     }
+    // -----------------------------
+
     stages {
         stage('Checkout Code') {
             steps {
-                // Lấy code từ GitHub về
                 checkout scm
             }
         }
+
         stage('Build Docker') {
             steps {
                 script {
-                    // Build ra image
-                    sh "docker build -t $DOCKER_IMAGE:${env.BUILD_NUMBER} ."
+                    echo '--- Building Docker Image ---'
+                    // Build image
+                    docker.build("${DOCKER_IMAGE}:${BUILD_NUMBER}")
+                    docker.build("${DOCKER_IMAGE}:latest")
                 }
             }
         }
+
         stage('Push to DockerHub') {
             steps {
                 script {
-                    // Đăng nhập và đẩy lên
-                    withCredentials([usernamePassword(credentialsId: DOCKER_CRED_ID, passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-                        sh "echo $PASS | docker login -u $USER --password-stdin"
-                        sh "docker push $DOCKER_IMAGE:${env.BUILD_NUMBER}"
-                        
-                        // Gắn mác 'latest' cho bản mới nhất
-                        sh "docker tag $DOCKER_IMAGE:${env.BUILD_NUMBER} $DOCKER_IMAGE:latest"
-                        sh "docker push $DOCKER_IMAGE:latest"
+                    echo '--- Pushing to DockerHub ---'
+                    // Đăng nhập và Push
+                    // Lỗi xảy ra ở dòng dưới nếu thiếu phần environment ở trên
+                    docker.withRegistry('', DOCKER_CRED_ID) {
+                        docker.image("${DOCKER_IMAGE}:${BUILD_NUMBER}").push()
+                        docker.image("${DOCKER_IMAGE}:latest").push()
                     }
                 }
             }
         }
+        
         stage('Cleanup') {
             steps {
-                // Dọn dẹp rác sau khi build để server không bị đầy
-                sh "docker rmi $DOCKER_IMAGE:${env.BUILD_NUMBER}"
-                sh "docker rmi $DOCKER_IMAGE:latest"
+                // Xóa image local để tiết kiệm dung lượng
+                sh "docker rmi ${DOCKER_IMAGE}:${BUILD_NUMBER} || true"
+                sh "docker rmi ${DOCKER_IMAGE}:latest || true"
             }
         }
     }
 }
-
-
-
-
-
-
-
