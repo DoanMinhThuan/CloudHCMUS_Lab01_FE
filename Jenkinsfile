@@ -7,7 +7,7 @@ pipeline {
         DOCKER_IMAGE = 'dhuuthuc/lab01-fe' 
         
         // ID này phải khớp CHÍNH XÁC với ID trong ảnh image_5ad627.png của bạn
-        DOCKER_CRED_ID = 'dockerhub-login'
+        DOCKER_CRED_ID = 'dockerhub-id'
     }
     // -----------------------------
 
@@ -52,3 +52,4 @@ pipeline {
         }
     }
 }
+
