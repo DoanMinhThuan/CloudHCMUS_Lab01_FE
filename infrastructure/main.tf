@@ -57,7 +57,7 @@ data "aws_ami" "ubuntu" {
 resource "aws_instance" "app_server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.medium" # Dùng t3.medium cho nhanh (hoặc t2.micro nếu muốn free)
-  key_name      = "lab-master-key" # TÊN KEY CỦA BẠN TRÊN AWS (Phải chính xác)
+  key_name      = "lab-master-key" # TÊN KEY
   
   vpc_security_group_ids = [aws_security_group.app_sg_auto.id]
 
