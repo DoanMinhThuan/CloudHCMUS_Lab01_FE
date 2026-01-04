@@ -1,65 +1,40 @@
----
 - name: Deploy App to EC2
   hosts: all
-  become: yes
-  remote_user: ubuntu
+  become: true
+  user: ubuntu
   vars:
-    # Sửa tên DockerHub của bạn ở đây
-    docker_image: "dhuuthuc/lab01-fe:latest"
-    container_name: "my-auto-app"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 
   tasks:
-    - name: Install required system packages
+    - name: Update apt cache
       apt:
-        pkg:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - software-properties-common
-          - python3-pip
-          - virtualenv
-          - python3-setuptools
-        state: latest
-        update_cache: true
-
-    - name: Add Docker GPG apt Key
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
-
-    - name: Add Docker Repository
-      apt_repository:
-        repo: deb https://download.docker.com/linux/ubuntu focal stable
-        state: present
+        update_cache: yes
 
     - name: Install Docker
       apt:
-        name: docker-ce
-        state: latest
+        name: docker.io
+        state: present
 
     - name: Start Docker service
       service:
         name: docker
         state: started
         enabled: yes
+    
+    - name: Add user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
 
     - name: Pull Docker Image
-      docker_image:
-        name: "{{ docker_image }}"
-        source: pull
+      shell: docker pull dhuuthuc/lab01-fe:latest
 
-    - name: Stop running container (if any)
-      docker_container:
-        name: "{{ container_name }}"
-        state: absent
-        force_kill: yes
+    - name: Stop old container
+      shell: docker stop my-auto-app || true
+
+    - name: Remove old container
+      shell: docker rm my-auto-app || true
 
     - name: Run Docker Container
-      docker_container:
-        name: "{{ container_name }}"
-        image: "{{ docker_image }}"
-        state: started
-        restart_policy: always
-        ports:
-          # Map port 80 của máy chủ vào port 2048 của app
-          - "80:2048"
+      shell: docker run -d --name my-auto-app -p 8080:8080 dhuuthuc/lab01-fe:latest
