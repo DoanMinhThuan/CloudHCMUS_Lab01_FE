@@ -14,7 +14,7 @@ provider "aws" {
 
 # 1. Tạo Security Group cho App Server (Mở SSH và Port 8080)
 resource "aws_security_group" "app_sg_auto" {
-  name        = "app_sg_auto_terraform"
+  name        = "app_sg_auto_terraform_v2"
   description = "Allow SSH and Port 8080"
 
   ingress {
