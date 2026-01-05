@@ -57,9 +57,9 @@ pipeline {
                         sh """
                             ssh -o StrictHostKeyChecking=no ubuntu@${APP_SERVER_IP} '
                                 docker pull ${DOCKER_IMAGE}:latest
-                                docker stop my-web-app || true
-                                docker rm my-web-app || true
-                                docker run -d --name my-web-app -p 8080:8080 ${DOCKER_IMAGE}:latest
+                                docker stop my-app || true
+                                docker rm my-app || true
+                                docker run -d --name my-app -p 8080:8080 ${DOCKER_IMAGE}:latest
                             '
                         """
                     }
