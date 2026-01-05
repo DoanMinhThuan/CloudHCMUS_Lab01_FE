@@ -6,7 +6,7 @@ pipeline {
         DOCKER_IMAGE = '22120359/lab03-khacthien-fe'
         DOCKER_CRED_ID = 'dockerhub-id'
         APP_SERVER_IP = '172.31.44.69' 
-        SSH_CRED_ID = 'lab-ssh-key'
+        SSH_CRED_ID = 'lab-master-key'
     }
 
     stages {
