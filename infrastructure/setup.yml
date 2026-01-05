@@ -1,0 +1,108 @@
+# --- PHẦN 1: Cài đặt cho JENKINS ---
+- name: Setup Jenkins Server
+  hosts: jenkins
+  become: yes
+  tasks:
+    - name: Install Java & Docker
+      apt:
+        name:
+          - openjdk-17-jre
+          - docker.io
+        state: present
+        update_cache: yes
+        
+    - name: Add ubuntu to docker group
+      user: 
+        name: ubuntu 
+        groups: docker 
+        append: yes
+
+    - name: Install Jenkins (Basic)
+      shell: |
+        wget -q -O - https://pkg.jenkins.io/debian/jenkins.io-2023.key | sudo apt-key add -
+        sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+        apt-get update
+        apt-get install -y jenkins
+        systemctl start jenkins
+
+# --- PHẦN 2: Cài đặt cho APP SERVER ---
+- name: Setup App Server
+  hosts: app_server
+  become: yes
+  vars:
+    # SỬA TÊN IMAGE CỦA BẠN Ở ĐÂY
+    docker_image: "22120359/lab03-fe:latest" 
+  tasks:
+    - name: Install Docker
+      apt: 
+        name: docker.io 
+        state: present 
+        update_cache: yes
+    
+    - name: Install Docker SDK for Python
+      apt:
+        name: python3-docker
+        state: present
+
+    - name: Add ubuntu to docker group
+      user: 
+        name: ubuntu 
+        groups: docker 
+        append: yes
+
+    - name: Run App Container
+      docker_container:
+        name: my-app
+        image: "{{ docker_image }}"
+        state: started
+        restart: yes
+        ports:
+          - "8080:8080"
+        pull: yes
+
+# --- PHẦN 3: Cài đặt cho NGINX ---
+- name: Setup Nginx Proxy
+  hosts: nginx
+  become: yes
+  vars:
+    domain_name: "lab2.thuandoandevops.site"
+    email: "emailcuaban@gmail.com"
+  tasks:
+    - name: Install Nginx & Certbot
+      apt:
+        name:
+          - nginx
+          - certbot
+          - python3-certbot-nginx
+        state: present
+        update_cache: yes
+
+    - name: Create Nginx Config
+      copy:
+        dest: "/etc/nginx/sites-available/{{ domain_name }}"
+        content: |
+          server {
+              listen 80;
+              server_name {{ domain_name }};
+              
+              location / {
+                  # Ansible tự lấy IP của App Server điền vào đây
+                  proxy_pass http://{{ hostvars[groups['app_server'][0]].inventory_hostname }}:8080;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+              }
+          }
+
+    - name: Enable Site
+      file:
+        src: "/etc/nginx/sites-available/{{ domain_name }}"
+        dest: "/etc/nginx/sites-enabled/{{ domain_name }}"
+        state: link
+
+    - name: Reload Nginx
+      service: 
+        name: nginx 
+        state: reloaded
+
+    # - name: Obtain SSL
+    #   shell: certbot --nginx -d {{ domain_name }} -m {{ email }} --agree-tos --non-interactive

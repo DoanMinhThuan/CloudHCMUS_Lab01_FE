@@ -3,9 +3,9 @@ pipeline {
 
     environment {
         // --- CẤU HÌNH ---
-        DOCKER_IMAGE = '22120359/lab03-khacthien-fe'
+        DOCKER_IMAGE = '22120359/lab03-fe'
         DOCKER_CRED_ID = 'dockerhub-id'
-        APP_SERVER_IP = '172.31.44.69' 
+        APP_SERVER_IP = '172.31.45.223' 
         SSH_CRED_ID = 'lab-master-key'
     }
 

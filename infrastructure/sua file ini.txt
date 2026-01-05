@@ -1,0 +1,8 @@
+[jenkins]
+13.212.141.224 ansible_user=ubuntu ansible_ssh_private_key_file=/home/thuan/.ssh/lab-master-key.pem ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[nginx]
+13.xxx.xxx.xxx ansible_user=ubuntu ansible_ssh_private_key_file=/home/thuan/.ssh/lab-master-key.pem ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[app_server]
+13.212.236.136 ansible_user=ubuntu ansible_ssh_private_key_file=/home/thuan/.ssh/lab-master-key.pem ansible_ssh_common_args='-o StrictHostKeyChecking=no'
