@@ -1,1 +1,1 @@
-Test trigger Jenkins 2
+Test trigger Jenkins
