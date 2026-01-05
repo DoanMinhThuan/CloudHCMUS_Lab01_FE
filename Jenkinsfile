@@ -5,6 +5,8 @@ pipeline {
         // --- CẤU HÌNH ---
         DOCKER_IMAGE = '22120359/lab03-khacthien-fe'
         DOCKER_CRED_ID = 'dockerhub-id'
+        APP_SERVER_IP = '172.31.44.69' 
+        SSH_CRED_ID = 'lab-ssh-key'
     }
 
     stages {
@@ -39,6 +41,27 @@ pipeline {
                         sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
                         sh 'docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}'
                         sh 'docker push ${DOCKER_IMAGE}:latest'
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to App Server') {
+            steps {
+                // Dùng plugin sshagent để nạp key vào phiên làm việc
+                sshagent(credentials: [SSH_CRED_ID]) {
+                    script {
+                        echo "--- Đang Deploy lên Server: ${APP_SERVER_IP} ---"
+                        // Các lệnh này sẽ chạy từ xa trên máy App Server
+                        // StrictHostKeyChecking=no để tránh hỏi Yes/No khi lần đầu kết nối
+                        sh """
+                            ssh -o StrictHostKeyChecking=no ubuntu@${APP_SERVER_IP} '
+                                docker pull ${DOCKER_IMAGE}:latest
+                                docker stop my-web-app || true
+                                docker rm my-web-app || true
+                                docker run -d --name my-web-app -p 8080:8080 ${DOCKER_IMAGE}:latest
+                            '
+                        """
                     }
                 }
             }
